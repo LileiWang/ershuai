@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+   <title>报价中标概率计算</title>
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <!-- 引入 Bootstrap -->
+   <link href="css/bootstrap.min.css" rel="stylesheet">
+   <link href="css/bootstrap-table.min.css" rel="stylesheet">
+
+   <!-- jQuery (Bootstrap 的 JavaScript 插件需要引入 jQuery) -->
+   <script src="js/jquery.js"></script>
+   <!-- 包括所有已编译的插件 -->
+   <script src="js/bootstrap.min.js"></script>
+   <script src="js/bootstrap-table.min.js"></script>
+   <script src="js/bootstrap-table-zh-CN.min.js"></script>
+   <script src="js/highcharts.js"></script>
+
+
+   <!-- HTML5 Shiv 和 Respond.js 用于让 IE8 支持 HTML5元素和媒体查询 -->
+   <!-- 注意： 如果通过 file://  引入 Respond.js 文件, 则该文件无法起效果 -->
+   <!--[if lt IE 9]>
+         <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+         <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+      <![endif]-->
+</head>
+
+<body>
+   <div class="container">
+      <div class="row">
+         <div class="col-sm-12">
+            <h2>报价中标概率计算<small></small></h2>
+         </div>
+      </div>
+      <hr>
+      <div class="row">
+         <div class="col-sm-12">
+            <div class="form-horizontal" role="form">
+               <div class="form-group">
+                  <label for="minMoney" class="col-sm-2 control-label">采购最低值</label>
+                  <div class="col-sm-4">
+                     <div class="input-group">
+                        <input type="text" class="form-control" id="minMoney" value="72200500" placeholder="请输入采购最低值">
+                        <span class="input-group-addon">￥</span>
+                     </div>
+                  </div>
+                  <label for="maxMoney" class="col-sm-2 control-label">采购限额</label>
+                  <div class="col-sm-4">
+                     <div class="input-group">
+                        <input type="text" class="form-control" id="maxMoney" value="75272500" placeholder="请输入采购限额">
+                        <span class="input-group-addon">￥</span>
+                     </div>
+                  </div>
+               </div>
+               <div class="form-group">
+                  <label for="gapMoney" class="col-sm-2 control-label">报价计算间距</label>
+                  <div class="col-sm-4">
+                     <div class="input-group">
+                        <input type="text" class="form-control" id="gapMoney" value="80000" placeholder="请输入报价间距">
+                        <span class="input-group-addon">￥</span>
+                     </div>
+                  </div>
+               </div>
+               <hr>
+
+               <div class="form-group">
+                  <label for="aMoney" class="col-sm-2 control-label">企业A报价</label>
+                  <div class="col-sm-4">
+                     <div class="input-group">
+                        <input type="text" class="form-control" id="aMoney" value="73014325" placeholder="请输入企业A报价">
+                        <span class="input-group-addon">￥</span>
+                     </div>
+                  </div>
+                  <label for="bMoney" class="col-sm-2 control-label">企业B报价</label>
+                  <div class="col-sm-4">
+                     <div class="input-group">
+                        <input type="text" class="form-control" id="bMoney" value="72261600" placeholder="请输入企业B报价">
+                        <span class="input-group-addon">￥</span>
+                     </div>
+                  </div>
+               </div>
+               <hr>
+
+               <div class="form-group">
+                  <label for="percent1" class="col-sm-2 control-label">方法一占比</label>
+                  <div class="col-sm-4">
+                     <div class="input-group">
+                        <input type="text" class="form-control" id="percent1" value="40" placeholder="请输入方法一占比"
+                           onchange="changePercent1()">
+                        <span class="input-group-addon">%</span>
+                     </div>
+                  </div>
+
+                  <label for="percent2" class="col-sm-2 control-label">方法二占比</label>
+                  <div class="col-sm-4">
+                     <div class="input-group">
+                        <input type="text" class="form-control" id="percent2" value="60" placeholder="请输入方法二占比">
+                        <span class="input-group-addon">%</span>
+                     </div>
+                  </div>
+               </div>
+               <div class="form-group">
+                  <div class="col-sm-offset-2 col-sm-6">
+                     <button type="button" id="calc" class="btn btn-info">计算最优报价</button>
+                     <button type="button" id="changePercent" class="btn btn-warning">计算后调整占比</button>
+                  </div>
+               </div>
+               <div class="progress progress-striped active" style="display: none;">
+                  <div class="progress-bar progress-bar-info" role="progressbar" id="progress" aria-valuenow="80"
+                     aria-valuemin="0" aria-valuemax="100" style="width: 0%;">
+                     <span class="sr-only">40% 完成</span>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+
+      <div class="row">
+         <h3 data-toggle="collapse" data-target="#resultChart" style="cursor: pointer;">
+            报价中标概率分布图 <span class="caret"></span>
+         </h3>
+         <div class="col-sm-12 collapse in" id="resultChart" style=" height: 150px; margin: 0 auto">
+         </div>
+      </div>
+
+      <div class="row">
+         <h3 data-toggle="collapse" data-target="#tableDiv" style="cursor: pointer;">
+            报价中标概率列表（默认方法一排序） <span class="caret"></span>
+         </h3>
+         <div class="col-sm-12 collapse in" id="tableDiv">
+            <table class="table table-striped table-hover" data-toggle="table" data-pagination="true" data-search="true"
+               data-show-columns="true" id="resultTable">
+               <thead>
+                  <tr>
+                     <th data-field="money" data-sortable="true" data-formatter="priceFormatter"
+                        data-switchable="false">报价</th>
+                     <th data-field="method1" data-sortable="true" data-formatter="percentFormatter">方法一中标概率</th>
+                     <th data-field="method2" data-sortable="true" data-formatter="percentFormatter">方法二中标概率</th>
+                     <th data-field="combine" data-sortable="true" data-formatter="percentFormatter">结合占比中标概率</th>
+                  </tr>
+               </thead>
+               <tbody id="tableBody">
+               </tbody>
+            </table>
+         </div>
+      </div>
+
+
+   </div>
+
+
+   <script>
+      //随机浮动率（方法一和方法二都用）
+      var random1 = [-0.02, -0.015, -0.01, -0.005, 0, 0.01];
+      //随机浮动率2（方法二使用）
+      var random2 = [-0.04, -0.03, -0.02, -0.01];
+      //随机权重（方法二）
+      var randomQuan = [0.95, 0.90, 0.85, 0.80];
+
+      var resultArray = [];
+
+      $(document).ready(function () {
+         //初始化图表展示
+         generateChart();
+
+         async function calcResult() {
+
+            resultArray = [];
+            var minMoney = new Number($("#minMoney").val()).valueOf();
+            var maxMoney = new Number($("#maxMoney").val()).valueOf();
+            var gapMoney = new Number($("#gapMoney").val()).valueOf();
+            var aMoney = new Number($("#aMoney").val()).valueOf();
+            var bMoney = new Number($("#bMoney").val()).valueOf();
+            var percent1 = new Number($("#percent1").val()).valueOf();
+            var percent2 = new Number($("#percent2").val()).valueOf();
+
+            var goodMoney = 0;
+            var resultAlone = { "money": 0, "method1": 0, "method2": 0, "combine": 0 };
+
+            for (var myMoney = minMoney; myMoney <= maxMoney; myMoney = myMoney + gapMoney) {
+               await (function () {
+                  return new Promise(function (res, rej) {
+                     resultAlone = { "money": 0, "method1": 0, "method2": 0, "combine": 0 };
+                     resultAlone.money = myMoney;
+                     resultAlone.method1 = method1Random(maxMoney, myMoney, aMoney, bMoney);
+                     resultAlone.method2 = method2Quan(maxMoney, myMoney, aMoney, bMoney);
+                     resultAlone.combine = resultAlone.method1 * percent1 / 100 + resultAlone.method2 * percent2 / 100;
+                     resultArray.push(resultAlone);
+
+                     // console.log((myMoney-minMoney)*100/(maxMoney-minMoney)+"%");
+                     // $("#progress").css("width",(myMoney-minMoney)*100/(maxMoney-minMoney)+"%");
+                     // $("#progress").parent().hide();
+                     res();
+                  });
+               }());
+            }
+            $("#calc").html("计算最优报价").removeAttr("disabled");
+            finishCalc();
+
+         };
+
+         $("#calc").click(function () {
+            $("#calc").html("计算中……").attr("disabled", true);
+            // $("#progress").css("width","0%");
+            // $("#progress").parent().show();
+            setTimeout(calcResult, 100);
+
+         });
+
+
+         $("#changePercent").click(function () {
+            var percent1 = new Number($("#percent1").val()).valueOf();
+            var percent2 = new Number($("#percent2").val()).valueOf();
+            resultArray = resultArray.map((result) => {
+               return {
+                  "money": result.money,
+                  "method1": result.method1,
+                  "method2": result.method2,
+                  "combine": result.method1 * percent1 / 100 + result.method2 * percent2 / 100
+               }
+            });
+            finishCalc();
+
+         });
+
+
+
+      });
+
+
+      function method1Random(max, my, a, b) {
+         var allTimes = 0;//总计算次数
+         var hitTimes = 0;
+         random1.forEach(function (randomPercent) {
+            // 合理成本价=（采购限额×10%+随机值×90%）×（1+随机浮动率）
+
+            //方法二一 计算公式
+            good = (max * 0.1 + my * 0.9) * (1 + randomPercent);
+            hitTimes = hitTimes + judgeHit(my, a, b, good);
+
+            good = (max * 0.1 + a * 0.9) * (1 + randomPercent);
+            hitTimes = hitTimes + judgeHit(my, a, b, good);
+
+            good = (max * 0.1 + b * 0.9) * (1 + randomPercent);
+            hitTimes = hitTimes + judgeHit(my, a, b, good);
+
+            allTimes = allTimes + 3;
+         });
+         // console.log("1" + hitTimes + "," + allTimes);
+         return hitTimes / allTimes;
+      }
+
+      //TODO 方法二
+      function method2Quan(max, my, a, b) {
+         // 1-1	计算报价平均数：三家投标企业全部投标报价均进入平均价计算。
+         // 1-2	抽取随机浮动率1：浮动比率的抽取范围为[-2%，-1.5%，-1%，-0.5%，0%,1%]，具体浮动比率在开标时随机抽取确定。
+         // 1-3	抽取随机浮动率2：浮动比率的抽取范围为[-4%，-3%，-2%，-1%]，具体浮动比率在开标时随机抽取确定。
+         // 1-4	抽取权重：权重1的抽取范围为[95%，90%，85%,80%]，且权重1+权重2=100%。
+         // 具体权重在开标时随机抽取确定。
+         // 1-5	确定合理成本价
+         //          合理成本价=报价平均数×（1+随机浮动率1）×权重1+采购限额×（1+随机浮动率2）×权重2
+
+         var allTimes = 0;//总计算次数
+         var hitTimes = 0;
+         random1.forEach(function (randomPercent1) {
+            random2.forEach(function (randomPercent2) {
+               randomQuan.forEach(function (randomPercentQuan) {
+                  //方法二 计算公式
+                  good = (my + a + b) / 3 * (1 + randomPercent1) * randomPercentQuan + max * (1 + randomPercent2) * (1 - randomPercentQuan);
+                  // console.log("2:" + randomPercent1 + "," + randomPercent2 + "," + randomPercentQuan + "," + good + "," + my);
+                  hitTimes = hitTimes + judgeHit(my, a, b, good);
+                  allTimes = allTimes + 1;
+               });
+            });
+         });
+         // console.log("方法2:" + hitTimes + "," + allTimes);
+         return hitTimes / allTimes;
+      }
+
+      //判断是否中标
+      function judgeHit(myMoney, aMoney, bMoney, goodMoney) {
+         if (myMoney == goodMoney) {
+            return 1;
+         } else if (myMoney > goodMoney && myMoney < aMoney && myMoney < bMoney) {
+            return 1;
+         } else if (myMoney < goodMoney && myMoney > aMoney && myMoney > bMoney) {
+            return 1;
+         }
+         return 0;
+      }
+
+      //计算完成后的图、表展示
+      function finishCalc() {
+         //默认按照金额排序，然后更新图
+         jsonSort(resultArray, "money", false);
+         generateChart(resultArray);
+         //默认按照方法一排序，然后更新表格
+         jsonSort(resultArray, "method1", true);
+         $("#resultTable").bootstrapTable('load', resultArray);
+         $("#resultTable").bootstrapTable('refresh');
+      }
+
+      //生成图
+      function generateChart(result) {
+         if (!result) {
+            var json = {
+               chart: {
+                  type: 'column'
+               },
+               title: {
+                  text: '',
+                  style: {
+                     display: 'none'
+                  }
+               },
+               xAxis: {
+                  categories: [],
+                  title: {
+                     text: '报价（￥）'
+                  },
+                  crosshair: true
+               },
+               yAxis: {
+                  min: 0,
+                  title: {
+                     text: '中标概率（%）'
+                  }
+               },
+               series: [{
+                  name: '方法一',
+                  color: 'rgba(165,170,217,1)',
+                  data: []
+               }, {
+                  name: '方法二',
+                  color: 'rgba(126,86,134,.9)',
+                  data: []
+               }, {
+                  name: '结合占比',
+                  color: 'rgba(248,161,63,1)',
+                  data: []
+               }]
+            };
+
+            $('#resultChart').highcharts(json);
+            return;
+         }
+
+
+         var chart = {
+            type: 'column'
+         };
+         var title = {
+            text: '',
+            style: {
+               display: 'none'
+            }
+         }
+         var xAxis = {
+            categories: result.map((data) => { return data.money }),
+            title: {
+               text: '报价（￥）'
+            },
+            crosshair: true
+         };
+         var yAxis = {
+            min: 0,
+            title: {
+               text: '中标概率（%）'
+            }
+         };
+         var tooltip = {
+            headerFormat: '<span style="font-size:10px">报价: <b>{point.key}</b></span><table>',
+            pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}中标概率: </td>' +
+               '<td style="padding:0"><b>{point.y:.1f}%</b></td></tr>',
+            footerFormat: '</table>',
+            shared: true,
+            useHTML: true
+         };
+         var plotOptions = {
+            column: {
+               pointPadding: 0.2,
+               borderWidth: 0
+            }
+         };
+         var credits = {
+            enabled: false
+         };
+
+         var series = [{
+            name: '方法一',
+            color: 'rgba(165,170,217,1)',
+            data: result.map((data) => { return data.method1 * 100 })
+         }, {
+            name: '方法二',
+            color: 'rgba(126,86,134,.9)',
+            data: result.map((data) => { return data.method2 * 100 })
+         }, {
+            name: '结合占比',
+            color: 'rgba(248,161,63,1)',
+            data: result.map((data) => { return data.combine * 100 })
+         }];
+
+         var json = {};
+         json.chart = chart;
+         json.title = title;
+         json.tooltip = tooltip;
+         json.xAxis = xAxis;
+         json.yAxis = yAxis;
+         json.series = series;
+         json.plotOptions = plotOptions;
+         json.credits = credits;
+         $('#resultChart').css("height", "500px");
+         $('#resultChart').highcharts(json);
+      }
+
+
+
+      //生成[n,m]随机数
+      function randomNum(minNum, maxNum) {
+         switch (arguments.length) {
+            case 1:
+               return parseInt(Math.random() * minNum + 1, 10);
+               break;
+            case 2:
+               return parseInt(Math.random() * (maxNum - minNum + 1) + minNum, 10);
+               break;
+            default:
+               return 0;
+               break;
+         }
+      }
+
+      function percentFormatter(value) {
+         return (value * 100).toFixed(2) + "%";
+      }
+
+      function priceFormatter(value) {
+         // return "￥" + value;
+         return value;
+      }
+      function changePercent1() {
+         var percent1 = new Number($("#percent1").val()).valueOf();
+         $("#percent2").val(100 - percent1);
+      }
+      /*
+     * @description    根据某个字段实现对json数组的排序(升序)
+     * @param   array  要排序的json数组对象
+     * @param   field  排序字段（此参数必须为字符串）
+     * @param   reverse 是否倒序（默认为false）
+     * @return  array  返回排序后的json数组
+    */
+      function jsonSort(array, field, reverse) {
+         //数组长度小于2 或 没有指定排序字段 或 不是json格式数据
+         if (array.length < 2 || !field || typeof array[0] !== "object") return array;
+         //数字类型排序
+         if (typeof array[0][field] === "number") {
+            array.sort(function (x, y) { return x[field] - y[field] });
+         }
+         //字符串类型排序
+         if (typeof array[0][field] === "string") {
+            array.sort(function (x, y) { return x[field].localeCompare(y[field]) });
+         }
+         //倒序
+         if (reverse) {
+            array.reverse();
+         }
+         return array;
+      }
+   </script>
+</body>
+
+</html>
